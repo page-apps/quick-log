@@ -17,6 +17,7 @@
     "check": "pnpm typecheck && pnpm test && pnpm validate:data && pnpm build",
     "typecheck": "pnpm build:packages && tsc --noEmit -p tsconfig.json && pnpm --filter @repo-apps/astro-check-compat check:quick-log",
     "test": "pnpm --filter './packages/*' test && vitest run",
+    "pretest:e2e": "pnpm build:packages",
     "test:e2e": "playwright test",
     "validate:data": "node scripts/validate-data.ts"
   },
