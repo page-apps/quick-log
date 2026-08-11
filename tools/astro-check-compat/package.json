@@ -1,0 +1,13 @@
+{
+  "name": "@repo-apps/astro-check-compat",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Isolated TypeScript 6 language-service bridge for Astro diagnostics while the project compiler runs TypeScript 7.",
+  "scripts": {
+    "check:quick-log": "node check.mjs"
+  },
+  "dependencies": {
+    "@astrojs/check": "0.9.10",
+    "typescript": "6.0.3"
+  }
+}

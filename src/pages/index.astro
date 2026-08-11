@@ -1,0 +1,272 @@
+---
+import { resolveRuntimeConfig } from "@repo-apps/runtime";
+import { STANDARD_SECURITY_DISCLOSURE } from "@repo-apps/ui";
+import demoFixture from "../../demo/records.json";
+import manifest from "../../repo-app.config";
+import "../styles/global.css";
+
+const fallbackOwner = import.meta.env.PUBLIC_REPO_OWNER ?? "local";
+const fallbackRepository = import.meta.env.PUBLIC_REPO_NAME ?? "quick-log";
+const buildBranch = import.meta.env.PUBLIC_REPO_BRANCH;
+const buildVersion = import.meta.env.PUBLIC_APP_VERSION;
+const buildCommitSha = import.meta.env.PUBLIC_COMMIT_SHA ?? process.env.GITHUB_SHA;
+const resolved = resolveRuntimeConfig(manifest, {
+  githubRepository: process.env.GITHUB_REPOSITORY ?? `${fallbackOwner}/${fallbackRepository}`,
+  ...(buildBranch === undefined ? {} : { branch: buildBranch }),
+  ...(buildVersion === undefined ? {} : { appVersion: buildVersion }),
+  ...(buildCommitSha === undefined ? {} : { commitSha: buildCommitSha })
+});
+const requestedDeviceScope = import.meta.env.PUBLIC_GITHUB_DEVICE_SCOPE === "repo" ? "repo" : "public_repo";
+const runtimeConfig = {
+  appId: resolved.appId,
+  owner: resolved.repository.owner,
+  name: resolved.repository.name,
+  branch: resolved.repository.branch,
+  dataPath: import.meta.env.PUBLIC_REPO_DATA_PATH ?? `${resolved.repository.dataRoot}/records.json`,
+  version: resolved.appVersion,
+  commitSha: resolved.commitSha ?? "local",
+  deviceClientId: import.meta.env.PUBLIC_GITHUB_DEVICE_CLIENT_ID ?? "",
+  deviceScope: requestedDeviceScope,
+  fake: import.meta.env.PUBLIC_REPO_APPS_FAKE === "1"
+};
+const repositoryLabel = `${runtimeConfig.owner}/${runtimeConfig.name}`;
+const deviceFlowAvailable = runtimeConfig.fake || Boolean(runtimeConfig.deviceClientId);
+const baseUrl = import.meta.env.BASE_URL.endsWith("/") ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content="Capture small moments in a JSON collection you own." />
+    <meta name="theme-color" content="#f4f0e6" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://api.github.com https://github.com; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; frame-src 'none';" />
+    <link rel="icon" type="image/svg+xml" href={`${baseUrl}favicon.svg`} />
+    <title>{manifest.title} · Your notes, in your repository</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to entries</a>
+
+    <header class="site-header">
+      <a class="brand" href={baseUrl} aria-label={`${manifest.title} home`}>
+        <span class="brand-mark" aria-hidden="true">Q</span>
+        <span>
+          <strong>Quick Log</strong>
+          <small>Notes that stay yours</small>
+        </span>
+      </a>
+      <div class="header-actions">
+        <span class="repository-chip" title="Build-derived self repository">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M8 3.5h8a2 2 0 0 1 2 2v13l-6-3-6 3v-13a2 2 0 0 1 2-2Z" /></svg>
+          <span>{repositoryLabel}</span>
+        </span>
+        <span class="mode-badge" data-testid="mode-indicator" data-mode="demo">
+          <span class="status-dot"></span>
+          <span data-mode-label>Demo mode</span>
+        </span>
+        <button class="button button-primary button-small" type="button" data-testid="connect-button">Connect GitHub</button>
+      </div>
+    </header>
+
+    <main id="main" class="page-shell">
+      <aside class="offline-banner" data-testid="offline-banner" role="status" hidden>
+        <span aria-hidden="true">⌁</span>
+        <div><strong>You’re offline</strong><p>Keep writing—your editor draft is saved on this device. Repository actions resume after you reconnect.</p></div>
+      </aside>
+      <section class="intro" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">A calm place for fleeting thoughts</p>
+          <h1 id="page-title">What’s worth <em>remembering?</em></h1>
+          <p class="intro-copy">Capture a thought, a decision, or a small win. Your entries live as readable JSON in <strong>{repositoryLabel}</strong>.</p>
+        </div>
+        <aside class="demo-notice" data-demo-notice>
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 8v4m0 4h.01M4.5 19h15a1.5 1.5 0 0 0 1.3-2.25l-7.5-13a1.5 1.5 0 0 0-2.6 0l-7.5 13A1.5 1.5 0 0 0 4.5 19Z" /></svg>
+          <div>
+            <strong>Read-only repository demo</strong>
+            <p>Explore freely. Edits stay in this tab and never call GitHub until you connect.</p>
+          </div>
+        </aside>
+      </section>
+
+      <section class="status-strip" aria-label="Repository sync lifecycle">
+        <div class="sync-summary">
+          <span class="sync-icon" aria-hidden="true">↻</span>
+          <div>
+            <strong data-testid="sync-status">Demo data loaded</strong>
+            <span data-sync-detail>No remote writes in demo mode</span>
+          </div>
+        </div>
+        <ol class="release-steps" aria-label="Publish progress">
+          <li data-release-step="committed"><span>1</span><div><strong>Committed</strong><small>Saved to Git</small></div></li>
+          <li data-release-step="building"><span>2</span><div><strong>Building</strong><small>Actions running</small></div></li>
+          <li data-release-step="published"><span>3</span><div><strong>Published</strong><small>Live on Pages</small></div></li>
+        </ol>
+        <div class="release-links" data-release-links hidden>
+          <a data-commit-link target="_blank" rel="noreferrer">View commit</a>
+          <a href={`https://github.com/${repositoryLabel}/actions`} target="_blank" rel="noreferrer">GitHub Actions</a>
+          <a data-pages-link target="_blank" rel="noreferrer" hidden>Open site</a>
+        </div>
+      </section>
+
+      <div class="workspace">
+        <section class="entries-panel" aria-labelledby="entries-title">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Timeline</p>
+              <h2 id="entries-title">Recent entries</h2>
+            </div>
+            <button class="icon-button" data-testid="new-record-button" type="button">
+              <span aria-hidden="true">＋</span> New entry
+            </button>
+          </div>
+          <div class="entry-list" data-testid="record-list" aria-live="polite"></div>
+          <p class="empty-state" data-empty-state hidden>No entries yet. Write the first one.</p>
+        </section>
+
+        <section class="editor-panel" aria-labelledby="editor-title">
+          <div class="editor-heading">
+            <div>
+              <p class="eyebrow">Editor</p>
+              <h2 id="editor-title" data-editor-heading>New entry</h2>
+            </div>
+            <span class="draft-chip" data-draft-chip>Local draft</span>
+          </div>
+
+          <aside class="draft-recovery" data-testid="draft-recovery" hidden>
+            <div><strong>Unsaved draft recovered</strong><small data-draft-recovery-time></small></div>
+            <div><button class="button button-quiet button-small" type="button" data-draft-discard>Discard</button><button class="button button-primary button-small" type="button" data-draft-restore>Restore draft</button></div>
+          </aside>
+
+          <form data-record-form novalidate>
+            <input type="hidden" name="id" />
+            <label for="record-title">Title</label>
+            <input id="record-title" data-testid="record-title" name="title" type="text" maxlength="120" placeholder="Give this moment a name" required />
+
+            <label for="record-body">What happened?</label>
+            <textarea id="record-body" data-testid="record-editor" name="body" maxlength="4000" rows="8" placeholder="Write the useful detail while it’s fresh…" required></textarea>
+            <div class="field-meta"><span data-character-count>0 / 4,000</span></div>
+
+            <div class="field-grid">
+              <div>
+                <label for="record-tags">Tags <span>optional</span></label>
+                <input id="record-tags" name="tags" type="text" placeholder="work, idea, personal" />
+                <small>Comma-separated, lowercase</small>
+              </div>
+              <div>
+                <label for="record-time">When</label>
+                <input id="record-time" name="occurredAt" type="datetime-local" required />
+              </div>
+            </div>
+
+            <div class="form-error" data-form-error role="alert" hidden></div>
+            <div class="form-actions">
+              <button class="button button-danger" data-testid="delete-record-button" type="button" hidden>Delete entry</button>
+              <button class="button button-quiet" type="button" data-reset-button>Clear</button>
+              <button class="button button-primary" data-testid="save-button" type="submit">
+                <span data-save-label>Preview entry</span>
+                <span aria-hidden="true">→</span>
+              </button>
+            </div>
+          </form>
+        </section>
+      </div>
+
+      <section class="conflict-panel" data-testid="conflict-panel" hidden tabindex="-1" aria-labelledby="conflict-title">
+        <div>
+          <p class="eyebrow">Conflict needs your choice</p>
+          <h2 id="conflict-title">The repository changed while you were editing.</h2>
+          <p>Nothing was overwritten. Compare the versions, then choose how to continue.</p>
+        </div>
+        <div class="conflict-versions">
+          <article><h3>Your version</h3><pre data-conflict-local></pre></article>
+          <article><h3>Repository version</h3><pre data-conflict-remote></pre></article>
+        </div>
+        <div class="conflict-actions">
+          <button class="button button-quiet" type="button" data-conflict-action="reload">Reload remote</button>
+          <button class="button button-quiet" type="button" data-conflict-action="copy">Save mine as a copy</button>
+          <button class="button button-danger" type="button" data-conflict-action="overwrite">Overwrite explicitly</button>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>Quick Log <span aria-hidden="true">·</span> v{runtimeConfig.version}</span>
+      <span>Built from <code>{runtimeConfig.commitSha.slice(0, 7)}</code> <span aria-hidden="true">·</span> data stays in your repository</span>
+    </footer>
+
+    <dialog class="connect-dialog" data-testid="connect-dialog" aria-labelledby="connect-title">
+      <form method="dialog" class="dialog-close-form"><button aria-label="Close connection dialog" value="cancel">×</button></form>
+      <div class="dialog-heading">
+        <span class="dialog-icon" aria-hidden="true">↗</span>
+        <div><p class="eyebrow">Private connection</p><h2 id="connect-title">Connect Quick Log</h2></div>
+      </div>
+      <p>Use a fine-grained personal access token to read and write only this app’s repository.</p>
+      <div class="repository-detail"><span>Repository</span><strong>{repositoryLabel}</strong><small>Branch: {runtimeConfig.branch} · Data: {runtimeConfig.dataPath}</small></div>
+      <div class="permission-callout"><strong>Required GitHub access</strong><span>Selected repository: <b>{repositoryLabel}</b></span><span>Repository permission: <b>Contents — read and write</b></span><span>Saving needs no workflow or administration permission. Private-repository publish tracking additionally needs Actions and Deployments read access.</span></div>
+
+      <div class="auth-methods" role="tablist" aria-label="Connection method">
+        <button type="button" role="tab" aria-selected="true" data-testid="auth-method-pat">Fine-grained PAT</button>
+        <button type="button" role="tab" aria-selected="false" data-testid="auth-method-device" hidden={!deviceFlowAvailable}>GitHub Device Flow</button>
+      </div>
+
+      <form data-connect-form data-auth-panel="pat">
+        <section class="shared-credential-card" data-shared-credential-card hidden>
+          <div><strong>A shared credential is available</strong><small>It was explicitly stored by another Repo App on this origin. Quick Log will still verify its own repository access.</small><span data-shared-repository-hints></span></div>
+          <button class="button button-quiet button-small" data-testid="use-shared-credential" type="button">Use shared credential</button>
+        </section>
+        <fieldset data-persistence-options>
+          <legend>Keep this token for</legend>
+          <label class="choice-card"><input type="radio" name="persistence" value="session" checked /><span><strong>This tab session</strong><small>Cleared when this tab closes. Recommended on shared devices.</small></span></label>
+          <label class="choice-card"><input type="radio" name="persistence" value="persistent" /><span><strong>This browser</strong><small>Stored in localStorage on this origin until removed.</small></span></label>
+        </fieldset>
+        <label for="github-token">Fine-grained PAT</label>
+        <div class="token-field"><input id="github-token" data-testid="token-input" name="token" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…" required /><button type="button" data-token-toggle aria-label="Show token">Show</button></div>
+
+        <div class="security-disclosure">
+          <strong>Security disclosure</strong>
+          <p>{STANDARD_SECURITY_DISCLOSURE}</p>
+          <ul>
+            <li><code>localStorage</code> is scoped to an origin, not this app’s URL path.</li>
+            <li>Credentials are never committed, logged, placed in URLs, sent to analytics, or embedded in this build.</li>
+          </ul>
+        </div>
+        <label class="acknowledgement" data-persistence-ack hidden><input type="checkbox" name="acknowledge" /><span>I understand the browser-storage risk and want persistent storage.</span></label>
+        <label class="acknowledgement"><input type="checkbox" name="shareCredential" data-testid="share-credential" /><span>Share this PAT with Repo Apps on this browser origin. This is explicit, reversible, and increases the impact if any same-origin app is compromised.</span></label>
+        <div class="form-error" data-connect-error role="alert" hidden></div>
+        <div class="dialog-actions"><button class="button button-quiet" type="button" data-dialog-cancel>Cancel</button><button class="button button-primary" data-testid="connect-submit" type="submit">Connect securely</button></div>
+      </form>
+
+      <section class="device-flow-panel" data-testid="device-flow-panel" data-auth-panel="device" hidden>
+        <div class="device-intro"><strong>Connect without pasting a token</strong><p>GitHub will show the OAuth <code>{runtimeConfig.deviceScope}</code> scope requested by this app. OAuth repository scopes are broader than a repository-selected fine-grained PAT, so prefer a PAT when you want the narrowest access.</p></div>
+        <div class="device-code-card" data-device-code-card hidden>
+          <span>Enter this one-time code on GitHub</span>
+          <strong data-testid="device-user-code" aria-live="polite">—</strong>
+          <a class="button button-primary" data-testid="device-verification-link" target="_blank" rel="noreferrer">Open GitHub verification</a>
+        </div>
+        <p class="device-status" data-testid="device-status" role="status">Ready to begin secure device authorisation.</p>
+        <div class="form-error" data-device-error role="alert" hidden></div>
+        <div class="dialog-actions"><button class="button button-quiet" type="button" data-dialog-cancel-device>Cancel</button><button class="button button-primary" type="button" data-testid="device-start">Start Device Flow</button></div>
+      </section>
+    </dialog>
+
+    <dialog class="action-dialog" data-testid="disconnect-dialog" aria-labelledby="disconnect-title">
+      <h2 id="disconnect-title">Connection options</h2>
+      <p>Choose whether to disconnect only Quick Log or remove the opt-in shared credential for every Repo App on this origin.</p>
+      <div class="dialog-actions stacked"><button class="button button-quiet" data-testid="disconnect-session" type="button">Disconnect this app for this session</button><button class="button button-danger" data-testid="remove-shared-credential" type="button" hidden>Remove shared credential for every app</button><button class="button button-quiet" data-disconnect-cancel type="button">Cancel</button></div>
+    </dialog>
+
+    <dialog class="action-dialog" data-testid="delete-dialog" aria-labelledby="delete-title">
+      <h2 id="delete-title">Delete this entry?</h2>
+      <p data-delete-detail>The entry will be removed from the JSON collection in a revision-aware commit. A concurrent remote change will stop the delete and show a conflict.</p>
+      <div class="dialog-actions"><button class="button button-quiet" data-delete-cancel type="button">Keep entry</button><button class="button button-danger" data-testid="confirm-delete" type="button">Delete and commit</button></div>
+    </dialog>
+
+    <script is:inline id="quick-log-config" type="application/json" set:html={JSON.stringify(runtimeConfig)}></script>
+    <script is:inline id="quick-log-fixture" type="application/json" set:html={JSON.stringify(demoFixture)}></script>
+    <script>
+      import { startQuickLog } from "../lib/app";
+      startQuickLog();
+    </script>
+  </body>
+</html>

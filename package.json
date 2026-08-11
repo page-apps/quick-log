@@ -1,0 +1,37 @@
+{
+  "name": "quick-log-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.20.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "predev": "pnpm build:packages",
+    "dev": "astro dev",
+    "prebuild": "pnpm build:packages",
+    "build": "astro build && node scripts/validate-build.mjs",
+    "build:packages": "pnpm --filter './packages/*' build",
+    "preview": "astro preview",
+    "check": "pnpm typecheck && pnpm test && pnpm validate:data && pnpm build",
+    "typecheck": "pnpm build:packages && tsc --noEmit -p tsconfig.json && pnpm --filter @repo-apps/astro-check-compat check:quick-log",
+    "test": "pnpm --filter './packages/*' test && vitest run",
+    "test:e2e": "playwright test",
+    "validate:data": "node scripts/validate-data.ts"
+  },
+  "dependencies": {
+    "@repo-apps/credentials": "workspace:*",
+    "@repo-apps/repo-client": "workspace:*",
+    "@repo-apps/runtime": "workspace:*",
+    "@repo-apps/ui": "workspace:*",
+    "astro": "7.2.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1",
+    "@types/node": "26.2.0",
+    "typescript": "7.0.2",
+    "vitest": "4.1.10"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://repo-apps.local/schemas/quick-log-records-v1.json",
+  "title": "Quick Log records",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "records"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "body", "tags", "occurredAt", "createdAt", "updatedAt"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{7,63}$" },
+          "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+          "body": { "type": "string", "minLength": 1, "maxLength": 4000 },
+          "tags": {
+            "type": "array",
+            "maxItems": 8,
+            "uniqueItems": true,
+            "items": { "type": "string", "minLength": 1, "maxLength": 30, "pattern": "^[a-z0-9][a-z0-9-]*$" }
+          },
+          "occurredAt": { "type": "string", "format": "date-time" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  }
+}

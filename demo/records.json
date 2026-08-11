@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "records": [
+    {
+      "id": "demo-morning-walk",
+      "title": "Morning walk",
+      "body": "Spotted three rainbow lorikeets near the creek. The air finally felt like spring.",
+      "tags": ["personal", "outside"],
+      "occurredAt": "2026-08-09T07:42:00.000Z",
+      "createdAt": "2026-08-09T07:42:00.000Z",
+      "updatedAt": "2026-08-09T07:42:00.000Z"
+    },
+    {
+      "id": "demo-decision-record",
+      "title": "Small decision, written down",
+      "body": "Keep the first release focused: quick notes, reliable commits, and honest deployment status.",
+      "tags": ["work", "decision"],
+      "occurredAt": "2026-08-08T23:16:00.000Z",
+      "createdAt": "2026-08-08T23:16:00.000Z",
+      "updatedAt": "2026-08-08T23:16:00.000Z"
+    },
+    {
+      "id": "demo-book-quote",
+      "title": "Book note",
+      "body": "A useful system should make the next right action feel obvious.",
+      "tags": ["reading"],
+      "occurredAt": "2026-08-07T11:05:00.000Z",
+      "createdAt": "2026-08-07T11:05:00.000Z",
+      "updatedAt": "2026-08-07T11:05:00.000Z"
+    }
+  ]
+}
