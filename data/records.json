@@ -2,10 +2,21 @@
   "schemaVersion": 1,
   "records": [
     {
+      "id": "log-20260812104126-1wxini",
+      "title": "Test Quick Log",
+      "body": "Test",
+      "tags": [],
+      "occurredAt": "2026-08-12T10:41:00.000Z",
+      "createdAt": "2026-08-12T10:41:26.902Z",
+      "updatedAt": "2026-08-12T10:41:26.902Z"
+    },
+    {
       "id": "log-20260809-welcome",
       "title": "Quick Log is ready",
       "body": "This is the canonical first entry. Connect GitHub to add a note and commit it to this repository.",
-      "tags": ["welcome"],
+      "tags": [
+        "welcome"
+      ],
       "occurredAt": "2026-08-09T08:00:00.000Z",
       "createdAt": "2026-08-09T08:00:00.000Z",
       "updatedAt": "2026-08-09T08:00:00.000Z"
