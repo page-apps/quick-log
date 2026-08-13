@@ -52,7 +52,7 @@ test("authorises through deterministic fake Device Flow", async ({ page }) => {
   await expect(page.getByTestId("sync-status")).toContainText(/ready/i);
 });
 
-test("shares a PAT only by explicit opt-in and can remove it for every app", async ({ page }) => {
+test("shares a PAT after first-use opt-in and restores it on reload", async ({ page }) => {
   await page.goto("/");
   await page.getByTestId("connect-button").click();
   const dialog = page.getByTestId("connect-dialog");
@@ -60,6 +60,10 @@ test("shares a PAT only by explicit opt-in and can remove it for every app", asy
   await dialog.getByTestId("share-credential").check();
   await dialog.getByRole("checkbox", { name: /understand the browser-storage risk/i }).check();
   await dialog.getByTestId("connect-submit").click();
+  await expect(page.getByTestId("sync-status")).toContainText(/ready/i);
+
+  await page.reload();
+  await expect(page.getByTestId("mode-indicator")).not.toContainText(/demo/i);
   await expect(page.getByTestId("sync-status")).toContainText(/ready/i);
 
   await page.getByTestId("connect-button").click();

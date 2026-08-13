@@ -122,9 +122,12 @@ test("shared PAT reuse is explicit and disconnect scopes are distinct", async ()
   });
   await first.connect();
   assert.equal(JSON.parse(storage.getItem(SHARED_CREDENTIAL_KEY)).version, 1);
+  assert.equal(await first.hasAppRegistration(), true);
   assert.equal(await second.hasShared(), true);
+  assert.equal(await second.hasAppRegistration(), false);
   assert.equal(await second.get(), null, "shared storage is not implicitly exposed");
   assert.equal((await second.useShared()).token, "github_pat_shared_12345678");
+  assert.equal(await second.hasAppRegistration(), true);
   assert.deepEqual(await second.listRepositoryHints(), ["owner/quick-log", "owner/reading"]);
   await second.disconnect();
   assert.equal(await second.get(), null);

@@ -76,6 +76,7 @@ export function startQuickLog(): void {
   const config = readJson<RuntimeConfig>("quick-log-config");
   const fixture = parseCollection(readJson<unknown>("quick-log-fixture"));
   const identity: RepositoryIdentity = { owner: config.owner, name: config.name, branch: config.branch };
+  const autoRestoreDisabledKey = `repo-apps:auto-restore-disabled:${config.appId}`;
 
   const modeIndicator = $<HTMLElement>("[data-testid='mode-indicator']");
   const modeLabel = $<HTMLElement>("[data-mode-label]");
@@ -119,6 +120,23 @@ export function startQuickLog(): void {
   let recoveredDraft: QuickLogDraft | null = null;
   let draftTimer = 0;
   let restoreAttempted = false;
+
+  const isAutoRestoreDisabled = (): boolean => {
+    try {
+      return sessionStorage.getItem(autoRestoreDisabledKey) === "1";
+    } catch {
+      return false;
+    }
+  };
+
+  const setAutoRestoreDisabled = (disabled: boolean): void => {
+    try {
+      if (disabled) sessionStorage.setItem(autoRestoreDisabledKey, "1");
+      else sessionStorage.removeItem(autoRestoreDisabledKey);
+    } catch {
+      // A blocked session store should not prevent a connection attempt.
+    }
+  };
 
   const setSync = (label: string, detail: string): void => {
     syncStatus.textContent = label;
@@ -430,11 +448,18 @@ export function startQuickLog(): void {
     renderList();
     if (collection.records[0]) populateForm(collection.records[0]); else resetForm();
     tokenInput.value = "";
+    setAutoRestoreDisabled(false);
     connectDialog.close();
   };
 
-  const restoreOwnCredential = async (): Promise<void> => {
-    if (restoreAttempted || connected || !navigator.onLine) return;
+  const sharedCandidate = (): SharedPatCredentialProvider => new SharedPatCredentialProvider({
+    appId: config.appId,
+    requestToken: async () => "",
+    repositoryHint: `${config.owner}/${config.name}`
+  });
+
+  const restoreSavedCredential = async (): Promise<void> => {
+    if (restoreAttempted || connected || !navigator.onLine || isAutoRestoreDisabled()) return;
     restoreAttempted = true;
     let foundStoredCredential = false;
     let lastError: unknown;
@@ -454,6 +479,28 @@ export function startQuickLog(): void {
           repository = null;
         }
       }
+
+      const shared = sharedCandidate();
+      try {
+        if (await shared.hasAppRegistration()) {
+          foundStoredCredential = true;
+          setSync("Reconnecting", `Verifying the shared credential for ${config.owner}/${config.name}`);
+          if (await shared.useShared()) {
+            try {
+              await finishConnection(shared, "shared");
+              return;
+            } catch (error) {
+              await shared.disconnect();
+              lastError = error;
+              credentialProvider = null;
+              repository = null;
+            }
+          }
+        }
+      } catch (error) {
+        lastError = error;
+      }
+
       if (foundStoredCredential) {
         setMode(false);
         setSync("Saved connection needs attention", friendlyError(lastError));
@@ -462,12 +509,6 @@ export function startQuickLog(): void {
       setBusy(false);
     }
   };
-
-  const sharedCandidate = (): SharedPatCredentialProvider => new SharedPatCredentialProvider({
-    appId: config.appId,
-    requestToken: async () => "",
-    repositoryHint: `${config.owner}/${config.name}`
-  });
 
   const refreshSharedAvailability = async (): Promise<void> => {
     try {
@@ -654,6 +695,7 @@ export function startQuickLog(): void {
   });
 
   $<HTMLButtonElement>("[data-testid='disconnect-session']").addEventListener("click", async () => {
+    setAutoRestoreDisabled(true);
     await credentialProvider?.disconnect();
     disconnectDialog.close();
     returnToDemo();
@@ -738,7 +780,7 @@ export function startQuickLog(): void {
   window.addEventListener("offline", updateConnectivity);
   window.addEventListener("online", () => {
     updateConnectivity();
-    void restoreOwnCredential();
+    void restoreSavedCredential();
   });
 
   document.querySelectorAll<HTMLButtonElement>("[data-conflict-action]").forEach((button) => {
@@ -784,7 +826,7 @@ export function startQuickLog(): void {
   renderList();
   if (collection.records[0]) populateForm(collection.records[0]); else resetForm();
   updateConnectivity();
-  void restoreOwnCredential();
+  void restoreSavedCredential();
   void loadDraft().then((draft) => {
     if (!draft || !hasDraftContent(draft)) return;
     recoveredDraft = draft;

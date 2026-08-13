@@ -31,6 +31,7 @@ export interface SharedCredentialVault extends CredentialProvider {
   readonly storageKey: typeof SHARED_CREDENTIAL_KEY;
   useShared(): Promise<Credential | null>;
   hasShared(): Promise<boolean>;
+  hasAppRegistration(): Promise<boolean>;
   listRepositoryHints(): Promise<readonly string[]>;
 }
 
@@ -80,6 +81,10 @@ export class SharedPatCredentialProvider implements SharedCredentialVault {
 
   async hasShared(): Promise<boolean> {
     return this.#read(true) !== null;
+  }
+
+  async hasAppRegistration(): Promise<boolean> {
+    return this.#read(true)?.apps[this.#appId] !== undefined;
   }
 
   async get(): Promise<Credential | null> {
