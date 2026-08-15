@@ -1,6 +1,7 @@
 name: Validate and deploy Quick Log
 
 on:
+  pull_request:
   push:
     branches: [main]
   workflow_dispatch:
@@ -62,18 +63,21 @@ jobs:
         run: pnpm test:e2e
 
       - name: Configure GitHub Pages
+        if: github.event_name == 'push'
         uses: actions/configure-pages@v6
 
       - name: Build static application
         run: pnpm build
 
       - name: Upload Pages artifact
+        if: github.event_name == 'push'
         uses: actions/upload-pages-artifact@v5
         with:
           path: dist
           retention-days: 1
 
   deploy:
+    if: github.event_name == 'push'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

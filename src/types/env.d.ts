@@ -8,6 +8,7 @@ interface ImportMetaEnv {
   readonly PUBLIC_COMMIT_SHA?: string;
   readonly PUBLIC_GITHUB_DEVICE_CLIENT_ID?: string;
   readonly PUBLIC_GITHUB_DEVICE_SCOPE?: "public_repo" | "repo";
+  readonly PUBLIC_TODO_PLUGIN_SHA?: string;
 }
 
 interface ImportMeta {
