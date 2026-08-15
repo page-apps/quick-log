@@ -34,7 +34,7 @@ export default defineConfig({
       PUBLIC_APP_VERSION: "e2e",
       PUBLIC_COMMIT_SHA: "0000000000000000000000000000000000000000",
       PUBLIC_GITHUB_DEVICE_CLIENT_ID: "quick-log-fake-client",
-      PUBLIC_TODO_PLUGIN_SHA: "1542da707d725331ec9d73cedb6ff2af272ea0f5",
+      PUBLIC_TODO_PLUGIN_SHA: "1759237b3a21d1c1cb55dad0eb3767ef767d2d68",
     },
   } }),
 });
