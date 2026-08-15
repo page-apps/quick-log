@@ -32,6 +32,11 @@ const runtimeConfig = {
 const repositoryLabel = `${runtimeConfig.owner}/${runtimeConfig.name}`;
 const deviceFlowAvailable = runtimeConfig.fake || Boolean(runtimeConfig.deviceClientId);
 const baseUrl = import.meta.env.BASE_URL.endsWith("/") ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
+const todoPluginConfig = {
+  commitSha: import.meta.env.PUBLIC_TODO_PLUGIN_SHA ?? "1759237b3a21d1c1cb55dad0eb3767ef767d2d68",
+  baseUrl,
+  fake: runtimeConfig.fake
+};
 ---
 
 <!doctype html>
@@ -41,7 +46,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/") ? import.meta.env.BASE_UR
     <meta name="viewport" content="width=device-width" />
     <meta name="description" content="Capture small moments in a JSON collection you own." />
     <meta name="theme-color" content="#f4f0e6" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://api.github.com https://github.com; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; frame-src 'none';" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://api.github.com https://github.com; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; frame-src 'none';" />
     <link rel="icon" type="image/svg+xml" href={`${baseUrl}favicon.svg`} />
     <title>{manifest.title} · Your notes, in your repository</title>
   </head>
@@ -172,6 +177,30 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/") ? import.meta.env.BASE_UR
         </section>
       </div>
 
+      <section class="private-plugin-panel" aria-labelledby="todo-plugin-title" data-testid="todo-plugin-host">
+        <div class="private-plugin-intro">
+          <div>
+            <p class="eyebrow">Experimental private plugin host</p>
+            <h2 id="todo-plugin-title">Todo List, loaded only after you connect it.</h2>
+            <p>Quick Log pins <code>page-apps/todo-list-plugin</code> at <code>{todoPluginConfig.commitSha.slice(0, 7)}</code>. A Service Worker fetches its complete Module Federation graph from the fixed private repository.</p>
+          </div>
+          <aside>Trusted first-party code only. The remote runs on Quick Log’s origin and is not a sandbox.</aside>
+        </div>
+        <form class="private-plugin-connect" data-todo-plugin-form>
+          <label for="todo-plugin-token">Plugin repository token</label>
+          <div>
+            <input id="todo-plugin-token" data-testid="todo-plugin-token" type="password" autocomplete="off" spellcheck="false" placeholder="Fine-grained PAT · Contents: read" />
+            <button class="button button-primary" data-testid="todo-plugin-load" type="submit">Load private Todo plugin</button>
+          </div>
+          <small>This separate session-only credential is sent to the worker, never to the remote, and is cleared on disconnect.</small>
+        </form>
+        <div class="private-plugin-status-row">
+          <p data-testid="todo-plugin-status" role="status">Private plugin bytes have not been requested.</p>
+          <button class="button button-quiet button-small" data-testid="todo-plugin-disconnect" type="button" hidden>Disconnect plugin</button>
+        </div>
+        <div class="private-plugin-mount" data-testid="todo-plugin-mount"></div>
+      </section>
+
       <section class="conflict-panel" data-testid="conflict-panel" hidden tabindex="-1" aria-labelledby="conflict-title">
         <div>
           <p class="eyebrow">Conflict needs your choice</p>
@@ -264,9 +293,12 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/") ? import.meta.env.BASE_UR
 
     <script is:inline id="quick-log-config" type="application/json" set:html={JSON.stringify(runtimeConfig)}></script>
     <script is:inline id="quick-log-fixture" type="application/json" set:html={JSON.stringify(demoFixture)}></script>
+    <script is:inline id="todo-plugin-config" type="application/json" set:html={JSON.stringify(todoPluginConfig)}></script>
     <script>
       import { startQuickLog } from "../lib/app";
+      import { startTodoPluginHost } from "../lib/plugins/todo-host";
       startQuickLog();
+      startTodoPluginHost();
     </script>
   </body>
 </html>

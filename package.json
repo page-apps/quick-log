@@ -22,16 +22,22 @@
     "validate:data": "node scripts/validate-data.ts"
   },
   "dependencies": {
+    "@module-federation/runtime": "2.8.2",
     "@repo-apps/credentials": "workspace:*",
+    "@repo-apps/plugin-runtime": "workspace:*",
     "@repo-apps/repo-client": "workspace:*",
     "@repo-apps/runtime": "workspace:*",
     "@repo-apps/ui": "workspace:*",
     "astro": "7.2.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
     "zod": "4.4.3"
   },
   "devDependencies": {
     "@playwright/test": "1.62.1",
     "@types/node": "26.2.0",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
     "typescript": "7.0.2",
     "vitest": "4.1.10"
   }

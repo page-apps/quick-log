@@ -10,7 +10,7 @@ export default defineConfig({
     ? [["github"], ["html", { open: "never", outputFolder: "playwright-report" }]]
     : "list",
   use: {
-    baseURL: "http://127.0.0.1:4324",
+    baseURL: "http://127.0.0.1:4324/quick-log/",
     trace: "on-first-retry",
   },
   projects: [
@@ -19,13 +19,14 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
   ],
-  webServer: {
+  ...(process.env.PLAYWRIGHT_EXTERNAL_SERVER === "1" ? {} : { webServer: {
     command: "node e2e/serve.mjs",
-    url: "http://127.0.0.1:4324",
+    port: 4324,
     reuseExistingServer: false,
     timeout: 120_000,
     env: {
-      GITHUB_ACTIONS: "false",
+      GITHUB_ACTIONS: "true",
+      GITHUB_REPOSITORY: "repo-apps-test/quick-log",
       PUBLIC_REPO_APPS_FAKE: "1",
       PUBLIC_REPO_OWNER: "repo-apps-test",
       PUBLIC_REPO_NAME: "quick-log",
@@ -33,6 +34,7 @@ export default defineConfig({
       PUBLIC_APP_VERSION: "e2e",
       PUBLIC_COMMIT_SHA: "0000000000000000000000000000000000000000",
       PUBLIC_GITHUB_DEVICE_CLIENT_ID: "quick-log-fake-client",
+      PUBLIC_TODO_PLUGIN_SHA: "1759237b3a21d1c1cb55dad0eb3767ef767d2d68",
     },
-  },
+  } }),
 });
