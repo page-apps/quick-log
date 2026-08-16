@@ -18,6 +18,22 @@ async function connectWithPat(page: Page): Promise<void> {
   await expect(page.getByTestId("sync-status")).toContainText(/ready/i);
 }
 
+async function connectWithSharedPat(page: Page): Promise<void> {
+  await page.getByTestId("connect-button").click();
+  const dialog = page.getByTestId("connect-dialog");
+  await dialog.getByTestId("token-input").fill("github_pat_fake_shared_plugin_e2e_token");
+  await dialog.getByTestId("share-credential").check();
+  await dialog.getByRole("checkbox", { name: /understand the browser-storage risk/i }).check();
+  await dialog.getByTestId("connect-submit").click();
+  await expect(page.getByTestId("sync-status")).toContainText(/ready/i);
+}
+
+async function loadTodoPlugin(page: Page): Promise<void> {
+  await page.getByTestId("todo-plugin-load").click();
+  await expect(page.getByTestId("todo-plugin-status")).toContainText(/loaded private plugin/i);
+  await expect(page.getByRole("heading", { name: "Small steps, clearly held." })).toBeVisible();
+}
+
 test("connects, edits and publishes through the fake self repository", async ({ page }) => {
   await page.goto("./");
 
@@ -146,19 +162,18 @@ test("loads the private Todo federation graph through the project-base Service W
   await page.goto("./");
 
   await expect(page.getByTestId("todo-plugin-status")).toContainText(/not been requested/i);
-  await page.getByTestId("todo-plugin-token").fill("repo-apps-e2e-fixture-token");
-  await page.getByTestId("todo-plugin-load").click();
+  await connectWithSharedPat(page);
+  await loadTodoPlugin(page);
 
-  await expect(page.getByTestId("todo-plugin-status")).toContainText(/loaded private plugin/i);
-  await expect(page.getByRole("heading", { name: "Small steps, clearly held." })).toBeVisible();
-  await expect(page.getByText("Verify the private plugin transport")).toBeVisible();
-  await expect(page.getByLabel("Task summary")).toContainText("1 active");
+  await expect(page.getByText("Review the private plugin boundary")).toBeVisible();
+  await expect(page.getByLabel("Task summary")).toContainText("2 active");
 
   const virtualResources = await page.evaluate(() => performance.getEntriesByType("resource").map((entry) => entry.name).filter((name) => name.includes("/__plugins/")));
   expect(virtualResources.some((url) => url.includes("/quick-log/__plugins/todo-list/"))).toBe(true);
-  expect(virtualResources.join(" ")).not.toContain("repo-apps-e2e-fixture-token");
+  expect(virtualResources.join(" ")).not.toContain("github_pat_fake_shared_plugin_e2e_token");
 
-  await page.getByRole("button", { name: "Delete Verify the private plugin transport" }).click();
+  const deleteButtons = page.locator(".todo-plugin-shell").getByRole("button", { name: /^Delete / });
+  while (await deleteButtons.count()) await deleteButtons.first().click();
   await expect(page.getByRole("heading", { name: "No tasks in this view" })).toBeVisible();
   await expect(page.locator(".todo-plugin-shell .empty-state img")).toHaveJSProperty("complete", true);
 
@@ -171,4 +186,33 @@ test("loads the private Todo federation graph through the project-base Service W
     return fetch(new URL(`__plugins/todo-list/${config.commitSha}/mf-manifest.json`, document.baseURI)).then((response) => response.status);
   });
   expect(anonymousStatus).toBe(401);
+});
+
+test("syncs Todo state across devices and rejects a stale device write", async ({ browser }) => {
+  test.skip(!todoPluginFixtureAvailable, "The private sibling plugin fixture is not available in this checkout.");
+  const firstContext = await browser.newContext();
+  const secondContext = await browser.newContext();
+  const first = await firstContext.newPage();
+  const second = await secondContext.newPage();
+  try {
+    await Promise.all([first.goto("./"), second.goto("./")]);
+    await Promise.all([connectWithSharedPat(first), connectWithSharedPat(second)]);
+    await Promise.all([loadTodoPlugin(first), loadTodoPlugin(second)]);
+
+    const firstEditor = first.locator("form[aria-label='Create task']");
+    await firstEditor.getByLabel("Title").fill("Retrieve this task on another device");
+    await firstEditor.getByLabel("Description").fill("Canonical state is stored in the fixed private Todo data repository.");
+    await firstEditor.getByRole("button", { name: "Add task" }).click();
+    await first.getByRole("button", { name: "Save changes" }).click();
+    await expect(first.getByText(/Committed [0-9a-f]{7}/)).toBeVisible();
+
+    await second.getByRole("button", { name: "Complete Plan the next small release" }).click();
+    await second.getByRole("button", { name: "Save changes" }).click();
+    await expect(second.getByText(/remote snapshot changed/i)).toBeVisible();
+    await second.getByRole("button", { name: "Reload host snapshot" }).click();
+    await expect(second.getByText("Retrieve this task on another device")).toBeVisible();
+  } finally {
+    await firstContext.close();
+    await secondContext.close();
+  }
 });

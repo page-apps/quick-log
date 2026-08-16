@@ -181,18 +181,16 @@ const todoPluginConfig = {
         <div class="private-plugin-intro">
           <div>
             <p class="eyebrow">Experimental private plugin host</p>
-            <h2 id="todo-plugin-title">Todo List, loaded only after you connect it.</h2>
-            <p>Quick Log pins <code>page-apps/todo-list-plugin</code> at <code>{todoPluginConfig.commitSha.slice(0, 7)}</code>. A Service Worker fetches its complete Module Federation graph from the fixed private repository.</p>
+            <h2 id="todo-plugin-title">Todo List, loaded with your hub-shared access.</h2>
+            <p>Quick Log pins <code>page-apps/todo-list-plugin</code> at <code>{todoPluginConfig.commitSha.slice(0, 7)}</code>. Its code loads through the Service Worker; its state syncs separately with <code>page-apps/todo-list-data</code>.</p>
           </div>
           <aside>Trusted first-party code only. The remote runs on Quick Log’s origin and is not a sandbox.</aside>
         </div>
         <form class="private-plugin-connect" data-todo-plugin-form>
-          <label for="todo-plugin-token">Plugin repository token</label>
           <div>
-            <input id="todo-plugin-token" data-testid="todo-plugin-token" type="password" autocomplete="off" spellcheck="false" placeholder="Fine-grained PAT · Contents: read" />
-            <button class="button button-primary" data-testid="todo-plugin-load" type="submit">Load private Todo plugin</button>
+            <button class="button button-primary" data-testid="todo-plugin-load" type="submit">Load with shared PAT</button>
           </div>
-          <small>This separate session-only credential is sent to the worker, never to the remote, and is cleared on disconnect.</small>
+          <small>Set up the PAT once in Personal Hub. This host checks plugin read and Todo-data write access, then gives the remote only revision-aware task methods—not the PAT.</small>
         </form>
         <div class="private-plugin-status-row">
           <p data-testid="todo-plugin-status" role="status">Private plugin bytes have not been requested.</p>

@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "tasks": [
+    {
+      "id": "task-20260815081500-a1b2c3",
+      "title": "Review the private plugin boundary",
+      "description": "Confirm the remote receives task capabilities and never receives a GitHub token.",
+      "status": "in-progress",
+      "priority": "high",
+      "tags": ["architecture", "security"],
+      "dueAt": "2026-08-16T07:00:00.000Z",
+      "createdAt": "2026-08-15T00:15:00.000Z",
+      "updatedAt": "2026-08-15T00:30:00.000Z"
+    },
+    {
+      "id": "task-20260815083000-d4e5f6",
+      "title": "Plan the next small release",
+      "description": "Write a concise checklist for the first host integration.",
+      "status": "todo",
+      "priority": "medium",
+      "tags": ["release"],
+      "createdAt": "2026-08-15T00:30:00.000Z",
+      "updatedAt": "2026-08-15T00:30:00.000Z"
+    },
+    {
+      "id": "task-20260814090000-g7h8i9",
+      "title": "Create the task schema",
+      "description": "Keep the JSON Schema and runtime validator aligned.",
+      "status": "done",
+      "priority": "low",
+      "tags": ["data"],
+      "createdAt": "2026-08-14T01:00:00.000Z",
+      "updatedAt": "2026-08-14T02:00:00.000Z"
+    }
+  ]
+}

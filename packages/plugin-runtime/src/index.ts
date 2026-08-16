@@ -156,3 +156,23 @@ export function postPrivatePluginWorkerMessage(worker: ServiceWorker, message: u
     worker.postMessage(message, [channel.port2]);
   });
 }
+
+export interface PrivatePluginCredentialSource {
+  get(): Promise<{ readonly token: string } | null>;
+}
+
+/** Keeps raw credential extraction inside the framework host adapter. */
+export async function postPrivatePluginWorkerCredential(
+  worker: ServiceWorker,
+  credentials: PrivatePluginCredentialSource,
+  message: Readonly<Record<string, unknown>>
+): Promise<void> {
+  if (Object.hasOwn(message, "token") || Object.hasOwn(message, "authorization")) {
+    throw new Error("Credential worker message metadata must not contain credential fields.");
+  }
+  const credential = await credentials.get();
+  if (!credential?.token) throw new Error("No shared credential is enabled for this plugin session.");
+  await postPrivatePluginWorkerMessage(worker, { ...message, token: credential.token });
+}
+
+export * from "./state.js";
